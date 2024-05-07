@@ -1,8 +1,11 @@
-from src.utils import spell_check_text
+import json
 
-dictionary = {"это", "пример", "текста", "который", "мы", "хотим", "проверить", "на", "орфографию"}
+from src.utils import dictionary
 
-text = "Это пример тек ттста, который мы хотим провериироть на орфографию."
 
-corrected_text = spell_check_text(text, dictionary)
-print(corrected_text)
+def save_dictionary(dictionary, file_path):
+    with open(file_path, 'w', encoding='utf-8') as file:
+        json.dump(dictionary, file, ensure_ascii=False, indent=4)
+
+
+save_dictionary(dictionary, "dictionary.json")
