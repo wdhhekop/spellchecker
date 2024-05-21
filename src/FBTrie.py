@@ -1,17 +1,31 @@
 #реализация структуры данных FB-Trie
-from src.levenshtein_distance import levenshtein_distance
-
-
 class TrieNode:
     def __init__(self):
         self.children = {}
-        self.is_end_of_word = False
         self.word = None
 
 
-class FBTrie:
-    def __init__(self):
+class FuzzyBoundedTrie:
+    def __init__(self, max_distance):
         self.root = TrieNode()
+        self.max_distance = max_distance
+
+    def levenshtein_distance(self, word1, word2):
+        n, m = len(word1), len(word2)
+        if n > m:
+            word1, word2 = word2, word1
+            n, m = m, n
+
+        current_row = range(n + 1)
+        for i in range(1, m + 1):
+            previous_row, current_row = current_row, [i] + [0] * n
+            for j in range(1, n + 1):
+                add, delete, change = previous_row[j] + 1, current_row[j - 1] + 1, previous_row[j - 1]
+                if word1[j - 1] != word2[i - 1]:
+                    change += 1
+                current_row[j] = min(add, delete, change)
+
+        return current_row[n]
 
     def insert(self, word):
         node = self.root
@@ -19,34 +33,21 @@ class FBTrie:
             if char not in node.children:
                 node.children[char] = TrieNode()
             node = node.children[char]
-        node.is_end_of_word = True
         node.word = word
 
     def search(self, word):
-        node = self.root
-        for char in word:
-            if char not in node.children:
-                return False
-            node = node.children[char]
-        return node.is_end_of_word
-
-    def levenshtein_search(self, word, max_distance):
         results = []
 
-        def levenshtein_traverse(node, current_word, distance):
-            if node.is_end_of_word and abs(len(current_word) - len(word)) <= max_distance:
-                distance += levenshtein_distance(current_word, word)
-                if distance <= max_distance:
-                    results.append((node.word, distance))
+        def dfs(node, prefix, remaining_dist):
+            if node.word is not None and self.levenshtein_distance(node.word, word) <= remaining_dist:
+                results.append(prefix + node.word)
 
-            for char, child_node in node.children.items():
-                new_word = current_word + char
-                new_distance = distance + 1
-                if char != word[len(current_word)]:
-                    new_distance += 1
+            for char, child in node.children.items():
+                dist = remaining_dist
+                if node.word is not None and node.word[-1] != char:
+                    dist -= 1
+                if dist >= 0:
+                    dfs(child, prefix + char, dist)
 
-                if new_distance <= max_distance or len(new_word) < len(word):
-                    levenshtein_traverse(child_node, new_word, new_distance)
-
-        levenshtein_traverse(self.root, "", 0)
+        dfs(self.root, "", self.max_distance)
         return results

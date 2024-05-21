@@ -1,38 +1,28 @@
-#Поиск ошибок в словаре
-from src.utils import word_dict
-from FBTrie import FBTrie
-
-correct_words = set()
-with open('russian.txt', 'r', encoding='utf-8') as file:
-    for line in file:
-        word = line.strip()
-        correct_words.add(word)
+import json
+from src.damerau_levenshtein_distance import damerau_levenshtein_distance
 
 
-def find_closest_word(word, correct_words, fb_trie):
-    closest_word = None
-    min_distance = float('inf')
+def main():
+    with open('dict.opcorpora.txt', 'r', encoding='ANSI') as file:
+        correct_words = set(word.strip().lower() for word in file)
 
-    results = fb_trie.levenshtein_search(word, 2)  # Ищем слова с расстоянием Левенштейна не больше 2
+    with open('dictionary.json', 'r', encoding='utf-8') as file:
+        text_words = set(json.load(file))
 
-    for result_word, distance in results:
-        if result_word in correct_words and distance < min_distance:
-            closest_word = result_word
-            min_distance = distance
+    printed_similar_words = set()  # Множество для хранения уже выведенных похожих слов
+    for word in text_words:
+        if word not in correct_words:
+            closest_words = [correct_word for correct_word in correct_words if
+                             damerau_levenshtein_distance(word, correct_word) <= 2]
+            if closest_words:
+                print(f"Ошибка в слове '{word}'. Возможно, вы имели в виду одно из следующих слов:")
+                for closest_word in closest_words:
+                    if closest_word not in printed_similar_words:
+                        print(f"- {closest_word}")
+                        printed_similar_words.add(closest_word)
+            else:
+                print(f"Ошибка в слове '{word}'. Похожие слова не найдены.")
 
-    return closest_word
 
-
-fb_trie = FBTrie()
-for word in correct_words:
-    fb_trie.insert(word)
-
-#Проверка орфографии и поиск наиболее похожего слова
-for key in word_dict:
-    if key not in correct_words:
-        closest_word = find_closest_word(key, correct_words, fb_trie)
-        print(f"Ошибка в слове '{key}'.")
-        if closest_word:
-            print(f"Возможно, вы имели в виду '{closest_word}'")
-        else:
-            print("Похожее слово не найдено.")
+if __name__ == "__main__":
+    main()
