@@ -1,4 +1,4 @@
-#подсчёт расстояния Дамерау-Левенштейна
+# подсчёт расстояния Дамерау-Левенштейна
 def damerau_levenshtein_distance(first_word, second_word):
     n = len(first_word) + 1
     m = len(second_word) + 1
