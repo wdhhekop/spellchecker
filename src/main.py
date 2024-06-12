@@ -13,7 +13,7 @@ def main():
     with open('corpus.json', 'w', encoding='utf-8') as json_file:
         json.dump(word_dict, json_file, ensure_ascii=False, indent=4)
 
-    check_spelling()
+    check_spelling('text.txt')
 
 
 if __name__ == '__main__':
